@@ -1,18 +1,20 @@
 import Product from "../models/products.js";
+import axios from "axios";
 
 export const getAllProduct = async (req, res) => {
   try {
     const pageNumber = req.query.page || 1;
     const options = {
       page: pageNumber,
-      limit: 16,
+      limit: 18,
       projection: {
         name: 1,
         price: 1,
         url_thumbnail: 1,
         brand: 1,
         category_name: 1,
-        e_commerce: 1
+        e_commerce: 1,
+        url_product: 1,
       },
     };
     const result = await Product.paginate({}, options);
@@ -45,25 +47,32 @@ export const getProduct = async (req, res) => {
 
 export const getSimilarProduct = async (req, res) => {
   try {
-    console.log("Hello");
     const { productId } = req.params;
-    const listProducts = await Product.find(
-      {
-        _id: {
-          $in: [
-            "663798691eafd36af066c87d",
-            "663798691eafd36af066c87e",
-            "663798691eafd36af066c87f",
-          ],
-        },
-      }
-    );
+    const response = await axios.get(`http://127.0.0.1:8000/products/${productId}`);
+    const response_data = response.data
+    if(response_data.code == 200) {
+      const list_product_id_similar = response_data.list_product_id_similar
+      console.log(list_product_id_similar);
+      const listProducts = await Product.find(
+        {
+          id: {
+            $in: [
+              ...list_product_id_similar
+            ],
+          },
+        }
+      );
 
-    res.status(200).json({
-      success: true,
-      msg: "Find Product Success",
-      listProducts: listProducts,
-    });
+      res.status(200).json({
+        success: true,
+        msg: "Find Product Success",
+        listProducts: listProducts,
+      });
+    } else {
+      throw new Error('Machine learning sever error');
+    }
+
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -75,14 +84,14 @@ export const searchProduct = async (req, res) => {
     const keyword = req.query.keyword || "";
     const options = {
       page: pageNumber,
-      limit: 16,
+      limit: 18,
       projection: {
         name: 1,
         price: 1,
         url_thumbnail: 1,
         brand: 1,
         category_name: 1,
-        e_commerce: 1
+        e_commerce: 1,
       },
     };
 
